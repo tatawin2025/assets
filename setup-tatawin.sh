@@ -252,6 +252,14 @@ if [[ ! -x "$HOME/bin/gws" || ! -x "$HOME/bin/fleet" ]]; then
     curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli.sh" | bash >/dev/null 2>&1 && echo "$(date) - wrappers Tatawin posés" || echo "$(date) WARN install wrappers"
 fi
 
+# Dossier de travail Claude Code + CLAUDE.md de cadrage. Le poste accède au vault via
+# MCP (pas de clone local) : sans ce fichier chargé, Claude Code répond « brut », sans
+# le contexte ni les règles Tatawin. Chargé auto quand on ouvre Claude Code dans ~/tatawin.
+mkdir -p "$HOME/tatawin"
+if [[ ! -f "$HOME/tatawin/CLAUDE.md" ]]; then
+    curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/employe-CLAUDE.md" -o "$HOME/tatawin/CLAUDE.md" 2>/dev/null && echo "$(date) - ~/tatawin/CLAUDE.md posé"
+fi
+
 # L'intégration app 1Password peut voir les comptes sans session ouverte : `op
 # whoami` échoue alors que `op item get` s'authentifie par Touch ID. On tente donc
 # d'ouvrir une session (no-op si l'intégration authentifie par commande), puis on
