@@ -212,6 +212,8 @@ fi
 # === CLAUDE au vault (au 1er login, APRÈS login 1Password) =================
 cat > /Library/Scripts/tatawin-claude-setup.sh << 'USERSCRIPT'
 #!/bin/bash
+# PATH minimal en LaunchAgent → on ajoute les emplacements de op/node/claude.
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin"
 exec >> "$HOME/Library/Logs/tatawin-claude-setup.log" 2>&1
 MARKER="$HOME/.tatawin-claude-configured"
 [[ -f "$MARKER" ]] && exit 0
