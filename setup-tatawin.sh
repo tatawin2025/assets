@@ -46,10 +46,13 @@ WELCOME_URL="https://raw.githubusercontent.com/tatawin2025/assets/main/welcome-t
 WELCOME_PATH="/Library/Application Support/Tatawin/welcome.html"
 # Apps installées en direct par le script (garantie — ne pas dépendre de « install
 # software » de Fleet, qui n'a poussé que 3/5 au pilote M4 du 18/08).
-# Claude = le VRAI Claude Desktop (nest/Claude.dmg → Claude.app), PAS le build
-# « claude-science » (qui s'installe en « Claude Science.app » = mauvais nom).
+# Claude = le VRAI Claude Desktop, build officiel « universal » de downloads.claude.ai
+# (source réelle derrière claude.com/download, CFBundleName « Claude »). Version pinnée
+# known-good : l'app s'auto-update après install, donc pas besoin d'un latest.yml.
+# NE PAS utiliser : nest/Claude.dmg (build ≠, 207 Mo) ni claude-science/* (71 Mo,
+# s'installe en « Claude Science.app » = mauvais produit). URL validée = 350 Mo.
 DIA_DMG_URL="https://releases.diabrowser.com/release/Dia-latest.dmg"
-CLAUDE_DMG_URL="https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest/Claude.dmg"
+CLAUDE_DMG_URL="https://downloads.claude.ai/releases/darwin/universal/1.32352.1/Claude-6c6aa595ae38b202d9e00c026dc94d3a6a42c332.dmg"
 # Tatawin.app = vraie app native (WKWebView, fenêtre standalone), pré-buildée +
 # signée ad-hoc, hébergée sur assets. Remplace l'ancien wrapper osacompile qui
 # ouvrait app.tatawin.io dans Safari.
