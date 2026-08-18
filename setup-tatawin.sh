@@ -243,6 +243,15 @@ if ! command -v claude &>/dev/null && [[ ! -x "$HOME/.local/bin/claude" ]]; then
     curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1 && echo "$(date) - Claude Code installé" || echo "$(date) WARN install Claude Code"
 fi
 
+# Wrappers Tatawin (gws/fleet/notion/primo/slack + op-cached) → ~/bin, via l'installeur
+# publié (pose aussi jq + PATH). Aucun secret dans les scripts : ils lisent leur token
+# dans 1Password « Tatawin / Interne » à l'exécution → INERTES tant que la personne n'y
+# a pas accès. C'est l'appartenance à ce coffre 1Password (que gère l'IT), pas la présence
+# des scripts, qui ouvre l'accès aux API clients.
+if [[ ! -x "$HOME/bin/gws" || ! -x "$HOME/bin/fleet" ]]; then
+    curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli.sh" | bash >/dev/null 2>&1 && echo "$(date) - wrappers Tatawin posés" || echo "$(date) WARN install wrappers"
+fi
+
 # L'intégration app 1Password peut voir les comptes sans session ouverte : `op
 # whoami` échoue alors que `op item get` s'authentifie par Touch ID. On tente donc
 # d'ouvrir une session (no-op si l'intégration authentifie par commande), puis on
