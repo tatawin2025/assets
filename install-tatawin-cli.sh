@@ -30,10 +30,12 @@ for w in gws fleet notion primo slack op-cached; do
 done
 echo "→ wrappers posés dans ~/bin"
 
-# PATH : ajoute ~/bin au shell si absent
-if ! grep -q 'HOME/bin' "$HOME/.zshrc" 2>/dev/null; then
-  echo 'export PATH="$HOME/bin:$PATH"' >> "$HOME/.zshrc"
-  echo "→ ~/bin ajouté au PATH (.zshrc)"
+# PATH : on écrit dans ~/.zshenv (lu par TOUS les shells zsh, y compris les shells
+# non-interactifs de Claude Code — .zshrc n'est lu que par les shells interactifs,
+# d'où des « command not found » sinon). On couvre ~/bin (wrappers) + ~/.local/bin (claude).
+if ! grep -q 'HOME/bin' "$HOME/.zshenv" 2>/dev/null; then
+  echo 'export PATH="$HOME/bin:$HOME/.local/bin:$PATH"' >> "$HOME/.zshenv"
+  echo "→ ~/bin + ~/.local/bin ajoutés au PATH (.zshenv)"
 fi
 
 # jq : macOS 15+ le fournit ; sinon binaire statique dans ~/bin
