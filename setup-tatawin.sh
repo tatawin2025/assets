@@ -135,6 +135,9 @@ echo "$(date) - Dock configuré"
 if ! command -v node &>/dev/null; then
     curl -L -o /tmp/node.pkg "$NODE_PKG_URL" && installer -pkg /tmp/node.pkg -target / && rm -f /tmp/node.pkg
 fi
+# Le pkg Node installe node+npm dans /usr/local/bin — pas forcément dans le PATH
+# de la setup experience (root, PATH minimal). On l'ajoute pour que `npm install` marche.
+export PATH="/usr/local/bin:$PATH"
 mkdir -p "$VAULT_MCP_DIR"
 if curl -fL -o /tmp/vault-mcp.tar.gz "$VAULT_MCP_DIST_URL" && [[ -s /tmp/vault-mcp.tar.gz ]]; then
     tar -xzf /tmp/vault-mcp.tar.gz -C "$VAULT_MCP_DIR" --strip-components=1
