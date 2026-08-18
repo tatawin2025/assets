@@ -114,7 +114,11 @@ for app in "/Applications/Dia.app" "/Applications/Slack.app" "/Applications/1Pas
 done
 defaults write com.apple.dock tilesize -integer 46
 defaults write com.apple.dock show-recents -bool false
+# Désactiver les widgets sur le bureau (comme Evaneos/Hublo/Homa…)
+defaults write com.apple.WindowManager StandardHideWidgets -bool true
+defaults write com.apple.WindowManager StageManagerHideWidgets -bool true
 killall Dock
+killall WindowManager 2>/dev/null
 touch "$MARKER"
 DOCKSCRIPT
 chmod 755 /Library/Scripts/tatawin-dock-setup.sh
