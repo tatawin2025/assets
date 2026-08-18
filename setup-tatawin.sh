@@ -252,14 +252,6 @@ if [[ ! -x "$HOME/bin/gws" || ! -x "$HOME/bin/fleet" ]]; then
     curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli.sh" | bash >/dev/null 2>&1 && echo "$(date) - wrappers Tatawin posés" || echo "$(date) WARN install wrappers"
 fi
 
-# Dossier de travail Claude Code + CLAUDE.md de cadrage. Le poste accède au vault via
-# MCP (pas de clone local) : sans ce fichier chargé, Claude Code répond « brut », sans
-# le contexte ni les règles Tatawin. Chargé auto quand on ouvre Claude Code dans ~/tatawin.
-mkdir -p "$HOME/tatawin"
-if [[ ! -f "$HOME/tatawin/CLAUDE.md" ]]; then
-    curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/employe-CLAUDE.md" -o "$HOME/tatawin/CLAUDE.md" 2>/dev/null && echo "$(date) - ~/tatawin/CLAUDE.md posé"
-fi
-
 # L'intégration app 1Password peut voir les comptes sans session ouverte : `op
 # whoami` échoue alors que `op item get` s'authentifie par Touch ID. On tente donc
 # d'ouvrir une session (no-op si l'intégration authentifie par commande), puis on
@@ -323,6 +315,42 @@ PLIST
 chmod 644 /Library/LaunchAgents/com.tatawin.claude-setup.plist
 chown root:wheel /Library/LaunchAgents/com.tatawin.claude-setup.plist
 echo "$(date) - LaunchAgent Claude posé"
+
+# === DOSSIER DE TRAVAIL + CLAUDE.md DE CADRAGE (enforcement one-way) ========
+# Le poste accède au vault via MCP (pas de clone) : sans un CLAUDE.md chargé, Claude
+# Code répond « brut ». On pose ~/tatawin/CLAUDE.md et on l'ENFORCE : agent qui le
+# re-synchronise depuis la source canonique (assets) et le rend immuable (chflags uchg)
+# → les modifs de l'employé sont écrasées, les MAJ du template se propagent. Sync one-way.
+cat > /Library/Scripts/tatawin-claude-md-sync.sh << 'MDSYNC'
+#!/bin/bash
+export PATH="/usr/local/bin:/usr/bin:/bin"
+DIR="$HOME/tatawin"; F="$DIR/CLAUDE.md"
+URL="https://raw.githubusercontent.com/tatawin2025/assets/main/employe-CLAUDE.md"
+mkdir -p "$DIR"
+TMP="$(mktemp)"
+if curl -fsSL "$URL" -o "$TMP" && [[ -s "$TMP" ]]; then
+    if ! cmp -s "$TMP" "$F" 2>/dev/null; then
+        chflags nouchg "$F" 2>/dev/null
+        cp "$TMP" "$F"
+    fi
+    chflags uchg "$F" 2>/dev/null   # immuable : blocage des éditions casual (Finder/éditeur)
+fi
+rm -f "$TMP"
+MDSYNC
+chmod 755 /Library/Scripts/tatawin-claude-md-sync.sh
+cat > /Library/LaunchAgents/com.tatawin.claude-md-sync.plist << 'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.tatawin.claude-md-sync</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>/Library/Scripts/tatawin-claude-md-sync.sh</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>600</integer>
+</dict></plist>
+PLIST
+chmod 644 /Library/LaunchAgents/com.tatawin.claude-md-sync.plist
+chown root:wheel /Library/LaunchAgents/com.tatawin.claude-md-sync.plist
+echo "$(date) - LaunchAgent claude-md-sync posé (enforce ~/tatawin/CLAUDE.md)"
 
 # === FAVORIS DIA (remplissage auto des profils créés à la main) ============
 # L'employé crée ses profils Dia à la main (verrou compte Dia). Cet agent MERGE
