@@ -50,6 +50,10 @@ WELCOME_PATH="/Library/Application Support/Tatawin/welcome.html"
 # « claude-science » (qui s'installe en « Claude Science.app » = mauvais nom).
 DIA_DMG_URL="https://releases.diabrowser.com/release/Dia-latest.dmg"
 CLAUDE_DMG_URL="https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest/Claude.dmg"
+# Tatawin.app = vraie app native (WKWebView, fenêtre standalone), pré-buildée +
+# signée ad-hoc, hébergée sur assets. Remplace l'ancien wrapper osacompile qui
+# ouvrait app.tatawin.io dans Safari.
+TATAWIN_APP_URL="https://github.com/tatawin2025/assets/releases/download/tatawin-app/tatawin-app.tar.gz"
 
 # === ATTENTE RÉSEAU =========================================================
 echo "$(date) - Attente réseau..."
@@ -124,9 +128,14 @@ fi
 # ouvre app.tatawin.io — dock-able, déployable en zero-touch. Packaging natif
 # (Electron/Tauri) = éventuel plus tard, pas nécessaire pour le dock.
 if [[ ! -d "/Applications/Tatawin.app" ]]; then
-    osacompile -o "/Applications/Tatawin.app" -e 'open location "https://app.tatawin.io"' 2>/dev/null \
-      && echo "$(date) - Tatawin.app (web-app) créé" \
-      || echo "$(date) - WARN : création Tatawin.app échouée"
+    if curl -fL -o /tmp/tatawin-app.tar.gz "$TATAWIN_APP_URL" && [[ -s /tmp/tatawin-app.tar.gz ]]; then
+        tar -xzf /tmp/tatawin-app.tar.gz -C /Applications/
+        xattr -dr com.apple.quarantine /Applications/Tatawin.app 2>/dev/null
+        echo "$(date) - Tatawin.app (native WKWebView) installée"
+    else
+        echo "$(date) - WARN : Tatawin.app indisponible (asset à publier)"
+    fi
+    rm -f /tmp/tatawin-app.tar.gz
 fi
 
 # === DOCK (au 1er login de chaque user) ====================================
@@ -307,6 +316,8 @@ MARKER="$HOME/.tatawin-welcome-shown"
 # attendre le bureau puis ouvrir le guide dans le navigateur par défaut
 for i in $(seq 1 90); do pgrep -x Dock &>/dev/null && break; sleep 1; done
 sleep 6
+# poser une copie du guide sur le Bureau (accessible à tout moment)
+cp "/Library/Application Support/Tatawin/welcome.html" "$HOME/Desktop/Bienvenue Tatawin.html" 2>/dev/null
 open "/Library/Application Support/Tatawin/welcome.html"
 touch "$MARKER"
 WSCRIPT
