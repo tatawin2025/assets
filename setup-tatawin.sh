@@ -312,7 +312,7 @@ cat > /Library/LaunchAgents/com.tatawin.claude-setup.plist << 'PLIST'
   <key>Label</key><string>com.tatawin.claude-setup</string>
   <key>ProgramArguments</key><array><string>/bin/bash</string><string>/Library/Scripts/tatawin-claude-setup.sh</string></array>
   <key>RunAtLoad</key><true/>
-  <key>StartInterval</key><integer>900</integer>
+  <key>StartInterval</key><integer>300</integer>
 </dict></plist>
 PLIST
 chmod 644 /Library/LaunchAgents/com.tatawin.claude-setup.plist
