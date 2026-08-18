@@ -393,7 +393,7 @@ mkdir -p "$(dirname "$WELCOME_PATH")"
 curl -fL -o "$WELCOME_PATH" "$WELCOME_URL" && chmod 644 "$WELCOME_PATH"
 # 2) l'app native du guide (icône 👋), stagée pour être posée sur le Bureau au 1er login
 curl -fL -o /tmp/welcome-app.tar.gz "$WELCOME_APP_URL" && tar -xzf /tmp/welcome-app.tar.gz -C "/Library/Application Support/Tatawin/" && rm -f /tmp/welcome-app.tar.gz
-if [[ -s "$WELCOME_PATH" && -d "/Library/Application Support/Tatawin/Bienvenue Tatawin.app" ]]; then
+if [[ -s "$WELCOME_PATH" && -d "/Library/Application Support/Tatawin/Welcome guide.app" ]]; then
     cat > /Library/Scripts/tatawin-welcome.sh << 'WSCRIPT'
 #!/bin/bash
 MARKER="$HOME/.tatawin-welcome-shown"
@@ -402,14 +402,14 @@ MARKER="$HOME/.tatawin-welcome-shown"
 for i in $(seq 1 90); do pgrep -x Dock &>/dev/null && break; sleep 1; done
 sleep 6
 # poser l'app native du guide sur le Bureau (owned user, sans quarantaine), centrée
-rm -rf "$HOME/Desktop/Bienvenue Tatawin.app"
-cp -R "/Library/Application Support/Tatawin/Bienvenue Tatawin.app" "$HOME/Desktop/Bienvenue Tatawin.app"
-/usr/bin/xattr -dr com.apple.quarantine "$HOME/Desktop/Bienvenue Tatawin.app" 2>/dev/null
-/usr/sbin/chown -R "$(id -un):staff" "$HOME/Desktop/Bienvenue Tatawin.app"
+rm -rf "$HOME/Desktop/Welcome guide.app"
+cp -R "/Library/Application Support/Tatawin/Welcome guide.app" "$HOME/Desktop/Welcome guide.app"
+/usr/bin/xattr -dr com.apple.quarantine "$HOME/Desktop/Welcome guide.app" 2>/dev/null
+/usr/sbin/chown -R "$(id -un):staff" "$HOME/Desktop/Welcome guide.app"
 osascript -e 'tell application "Finder" to set b to bounds of window of desktop' \
-          -e 'tell application "Finder" to set position of file "Bienvenue Tatawin.app" of desktop to {((item 3 of b) div 2) - 40, ((item 4 of b) div 2) - 40}' 2>/dev/null
+          -e 'tell application "Finder" to set position of file "Welcome guide.app" of desktop to {((item 3 of b) div 2) - 40, ((item 4 of b) div 2) - 40}' 2>/dev/null
 # ouvrir le guide une seule fois
-open "$HOME/Desktop/Bienvenue Tatawin.app"
+open "$HOME/Desktop/Welcome guide.app"
 touch "$MARKER"
 WSCRIPT
     chmod 755 /Library/Scripts/tatawin-welcome.sh
