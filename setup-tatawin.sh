@@ -54,6 +54,8 @@ CLAUDE_DMG_URL="https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-49
 # signée ad-hoc, hébergée sur assets. Remplace l'ancien wrapper osacompile qui
 # ouvrait app.tatawin.io dans Safari.
 TATAWIN_APP_URL="https://github.com/tatawin2025/assets/releases/download/tatawin-app/tatawin-app.tar.gz"
+# App native du guide de bienvenue (WKWebView du welcome.html local, icône 👋) posée sur le Bureau
+WELCOME_APP_URL="https://github.com/tatawin2025/assets/releases/download/welcome-app/welcome-app.tar.gz"
 
 # === ATTENTE RÉSEAU =========================================================
 echo "$(date) - Attente réseau..."
@@ -307,18 +309,27 @@ rm -f /tmp/dia-bm.tar.gz
 # HTML autonome (aucune dépendance réseau une fois posé). Ouvert UNE SEULE fois
 # au premier login de chaque employé = l'assistant de config des comptes.
 mkdir -p "$(dirname "$WELCOME_PATH")"
-if curl -fL -o "$WELCOME_PATH" "$WELCOME_URL" && [[ -s "$WELCOME_PATH" ]]; then
-    chmod 644 "$WELCOME_PATH"
+# 1) le HTML autonome (lu par l'app native)
+curl -fL -o "$WELCOME_PATH" "$WELCOME_URL" && chmod 644 "$WELCOME_PATH"
+# 2) l'app native du guide (icône 👋), stagée pour être posée sur le Bureau au 1er login
+curl -fL -o /tmp/welcome-app.tar.gz "$WELCOME_APP_URL" && tar -xzf /tmp/welcome-app.tar.gz -C "/Library/Application Support/Tatawin/" && rm -f /tmp/welcome-app.tar.gz
+if [[ -s "$WELCOME_PATH" && -d "/Library/Application Support/Tatawin/Bienvenue Tatawin.app" ]]; then
     cat > /Library/Scripts/tatawin-welcome.sh << 'WSCRIPT'
 #!/bin/bash
 MARKER="$HOME/.tatawin-welcome-shown"
 [[ -f "$MARKER" ]] && exit 0
-# attendre le bureau puis ouvrir le guide dans le navigateur par défaut
+# attendre le bureau
 for i in $(seq 1 90); do pgrep -x Dock &>/dev/null && break; sleep 1; done
 sleep 6
-# poser une copie du guide sur le Bureau (accessible à tout moment)
-cp "/Library/Application Support/Tatawin/welcome.html" "$HOME/Desktop/Bienvenue Tatawin.html" 2>/dev/null
-open "/Library/Application Support/Tatawin/welcome.html"
+# poser l'app native du guide sur le Bureau (owned user, sans quarantaine), centrée
+rm -rf "$HOME/Desktop/Bienvenue Tatawin.app"
+cp -R "/Library/Application Support/Tatawin/Bienvenue Tatawin.app" "$HOME/Desktop/Bienvenue Tatawin.app"
+/usr/bin/xattr -dr com.apple.quarantine "$HOME/Desktop/Bienvenue Tatawin.app" 2>/dev/null
+/usr/sbin/chown -R "$(id -un):staff" "$HOME/Desktop/Bienvenue Tatawin.app"
+osascript -e 'tell application "Finder" to set b to bounds of window of desktop' \
+          -e 'tell application "Finder" to set position of file "Bienvenue Tatawin.app" of desktop to {((item 3 of b) div 2) - 40, ((item 4 of b) div 2) - 40}' 2>/dev/null
+# ouvrir le guide une seule fois
+open "$HOME/Desktop/Bienvenue Tatawin.app"
 touch "$MARKER"
 WSCRIPT
     chmod 755 /Library/Scripts/tatawin-welcome.sh
