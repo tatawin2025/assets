@@ -234,13 +234,15 @@ OP_FIELD="credential"
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
 [[ -x "$NODE_BIN" ]] || { echo "$(date) node absent, on retentera"; exit 0; }
 
-OP_WAIT=0
-until op whoami &>/dev/null; do
-    OP_WAIT=$((OP_WAIT + 1)); [[ $OP_WAIT -ge 60 ]] && { echo "1Password pas connecté, retry prochain login"; exit 0; }
-    sleep 30
-done
+# L'intégration app 1Password peut voir les comptes sans session ouverte : `op
+# whoami` échoue alors que `op item get` s'authentifie par Touch ID. On tente donc
+# d'ouvrir une session (no-op si l'intégration authentifie par commande), puis on
+# récupère directement le token. Pas de gate strict sur whoami.
+if ! op whoami &>/dev/null; then
+    eval "$(op signin --account tatawin.1password.eu 2>/dev/null)" || true
+fi
 TOKEN="$(op item get "$OP_ITEM" --fields "$OP_FIELD" --reveal 2>/dev/null)"
-[[ "$TOKEN" == tat_live_* ]] || { echo "token 1Password introuvable, retry prochain login"; exit 0; }
+[[ "$TOKEN" == tat_live_* ]] || { echo "$(date) token vault introuvable (op verrouillé / item absent), retry prochain login"; exit 0; }
 
 # Merge NON destructif dans les cibles Claude présentes : préserve les autres
 # serveurs MCP, (ré)écrit tatawin-vault. Toujours l'app Desktop ; + le CLI Claude
