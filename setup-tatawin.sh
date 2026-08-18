@@ -44,6 +44,12 @@ DIA_DIR="/Library/Application Support/Tatawin/dia"
 # Guide de bienvenue = HTML autonome public (assets), ouvert au 1er login.
 WELCOME_URL="https://raw.githubusercontent.com/tatawin2025/assets/main/welcome-tatawin.html"
 WELCOME_PATH="/Library/Application Support/Tatawin/welcome.html"
+# Apps installées en direct par le script (garantie — ne pas dépendre de « install
+# software » de Fleet, qui n'a poussé que 3/5 au pilote M4 du 18/08).
+# Claude = le VRAI Claude Desktop (nest/Claude.dmg → Claude.app), PAS le build
+# « claude-science » (qui s'installe en « Claude Science.app » = mauvais nom).
+DIA_DMG_URL="https://releases.diabrowser.com/release/Dia-latest.dmg"
+CLAUDE_DMG_URL="https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest/Claude.dmg"
 
 # === ATTENTE RÉSEAU =========================================================
 echo "$(date) - Attente réseau..."
@@ -53,6 +59,33 @@ while ! ping -c 1 -W 2 google.com &>/dev/null; do
     sleep 1
 done
 echo "$(date) - Réseau OK"
+
+# === APPS (Dia, Claude) — install direct, nom forcé =========================
+# 1Password/Slack/AnyDesk viennent de Fleet (install software) ; Dia + Claude
+# sont posés ici pour garantir le dock (leur install Fleet est peu fiable).
+install_dmg_app() {   # <url> <nom-app-cible-sans-.app>
+    local url="$1" name="$2"
+    [[ -d "/Applications/$name.app" ]] && return 0
+    curl -fL "$url" -o "/tmp/$name.dmg" || { echo "$(date) WARN dl $name"; return 1; }
+    local mp appdir
+    mp=$(hdiutil attach "/tmp/$name.dmg" -nobrowse -noverify 2>/dev/null | grep -o '/Volumes/.*' | tail -1)
+    appdir=$(ls -d "$mp/"*.app 2>/dev/null | head -1)
+    [[ -n "$appdir" ]] && cp -R "$appdir" "/Applications/$name.app"   # nom forcé (gère « Claude Science.app »)
+    hdiutil detach "$mp" 2>/dev/null >/dev/null; rm -f "/tmp/$name.dmg"
+    xattr -dr com.apple.quarantine "/Applications/$name.app" 2>/dev/null
+    [[ -d "/Applications/$name.app" ]] && echo "$(date) - $name installé"
+}
+install_dmg_app "$DIA_DMG_URL" "Dia"
+install_dmg_app "$CLAUDE_DMG_URL" "Claude"
+
+# === COMMAND LINE TOOLS (python3, requis par l'agent favoris Dia + config Claude) =
+if ! /usr/bin/python3 --version &>/dev/null; then
+    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    CLT_LBL=$(softwareupdate -l 2>/dev/null | awk '/\* Label:.*Command Line Tools/{sub(/^ *\* Label: /,""); print}' | sort -V | tail -1)
+    [[ -n "$CLT_LBL" ]] && softwareupdate -i "$CLT_LBL" --verbose
+    rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    echo "$(date) - Command Line Tools (python3) : ${CLT_LBL:-non trouvé}"
+fi
 
 # === OUTILS (desktoppr, dockutil) ==========================================
 if [[ ! -f "$DESKTOPPR_PATH" ]]; then
