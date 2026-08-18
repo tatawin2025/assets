@@ -164,9 +164,12 @@ for app in "/Applications/Dia.app" "/Applications/Slack.app" "/Applications/1Pas
 done
 defaults write com.apple.dock tilesize -integer 46
 defaults write com.apple.dock show-recents -bool false
-# Désactiver les widgets sur le bureau (comme Evaneos/Hublo/Homa…)
+# Désactiver les widgets sur le bureau (comme Evaneos/Hublo/Homa…). Sur macOS 26,
+# StandardHideWidgets/StageManagerHideWidgets ne suffisent PAS : il faut AUSSI
+# HideDesktopWidgets (vérifié pilote M4 18/08). killall WindowManager pour appliquer.
 defaults write com.apple.WindowManager StandardHideWidgets -bool true
 defaults write com.apple.WindowManager StageManagerHideWidgets -bool true
+defaults write com.apple.WindowManager HideDesktopWidgets -bool true
 killall Dock
 killall WindowManager 2>/dev/null
 touch "$MARKER"
