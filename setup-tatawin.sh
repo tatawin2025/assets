@@ -236,6 +236,13 @@ OP_FIELD="credential"
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
 [[ -x "$NODE_BIN" ]] || { echo "$(date) node absent, on retentera"; exit 0; }
 
+# Claude Code (CLI) — installé sur TOUS les postes (choix 2026-08-18). Installeur
+# natif officiel → ~/.local/bin/claude. Idempotent (skip si déjà présent). L'agent
+# le branchera au vault plus bas (TARGETS inclut ~/.claude.json si claude présent).
+if ! command -v claude &>/dev/null && [[ ! -x "$HOME/.local/bin/claude" ]]; then
+    curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1 && echo "$(date) - Claude Code installé" || echo "$(date) WARN install Claude Code"
+fi
+
 # L'intégration app 1Password peut voir les comptes sans session ouverte : `op
 # whoami` échoue alors que `op item get` s'authentifie par Touch ID. On tente donc
 # d'ouvrir une session (no-op si l'intégration authentifie par commande), puis on
