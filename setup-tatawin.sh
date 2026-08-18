@@ -283,7 +283,7 @@ if pgrep -x "Claude" >/dev/null 2>&1; then
     osascript -e 'quit app "Claude"' 2>/dev/null; sleep 2; open -a "Claude" 2>/dev/null
 fi
 touch "$MARKER"
-echo "$(date) - Vault branché dans l'app Claude Desktop"
+echo "$(date) - Vault branché dans Claude (Desktop + Code si présent)"
 USERSCRIPT
 chmod 755 /Library/Scripts/tatawin-claude-setup.sh
 cat > /Library/LaunchAgents/com.tatawin.claude-setup.plist << 'PLIST'
