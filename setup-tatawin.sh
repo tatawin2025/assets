@@ -35,6 +35,9 @@ DESKTOPPR_PATH="/usr/local/bin/desktoppr"
 DOCKUTIL_URL="https://github.com/kcrawford/dockutil/releases/download/3.0.2/dockutil-3.0.2.pkg"
 DOCKUTIL_PATH="/usr/local/bin/dockutil"
 NODE_PKG_URL="https://nodejs.org/dist/v20.17.0/node-v20.17.0.pkg"
+# 1Password CLI (op) = REQUIS : l'agent Claude récupère le token vault via `op item get`
+# sur la machine (jamais via Fleet). Sans op, le vault ne se branche jamais. Pkg officiel.
+OP_PKG_URL="https://cache.agilebits.com/dist/1P/op2/pkg/v2.34.0/op_apple_universal_v2.34.0.pkg"
 # Bundle vault-mcp = release "vault-mcp" sur tatawin2025/assets (server.js + bootstrap, sans secret).
 VAULT_MCP_DIST_URL="https://github.com/tatawin2025/assets/releases/download/vault-mcp/vault-mcp.tar.gz"
 VAULT_MCP_DIR="/Library/Application Support/Tatawin/vault-mcp"
@@ -200,6 +203,12 @@ else
 fi
 rm -f /tmp/vault-mcp.tar.gz
 
+# === 1Password CLI (op) — requis par l'agent Claude pour lire le token vault ===
+if ! command -v op &>/dev/null && [[ ! -x /usr/local/bin/op ]]; then
+    curl -fL -o /tmp/op.pkg "$OP_PKG_URL" && installer -pkg /tmp/op.pkg -target / && echo "$(date) - op (1Password CLI) installé"
+    rm -f /tmp/op.pkg
+fi
+
 # === CLAUDE au vault (au 1er login, APRÈS login 1Password) =================
 cat > /Library/Scripts/tatawin-claude-setup.sh << 'USERSCRIPT'
 #!/bin/bash
@@ -218,10 +227,10 @@ OP_ITEM="Tatawin — Vault Token"
 OP_FIELD="credential"
 [[ -f "$VAULT_MCP_DIR/server.js" ]] || { echo "$(date) bundle absent, on retentera"; exit 0; }
 
-# On branche le vault dans l'APP Claude Desktop (les employés n'utilisent pas le
-# CLI). L'app lit ses serveurs MCP dans :
-#   ~/Library/Application Support/Claude/claude_desktop_config.json
-# Node (posé par le setup) fait tourner le serveur MCP.
+# On branche le vault dans l'APP Claude Desktop (~/Library/Application Support/
+# Claude/claude_desktop_config.json) ET, si le CLI Claude Code est installé, dans
+# sa config utilisateur (~/.claude.json). Même serveur MCP, même bundle Node, même
+# token. Node (posé par le setup) fait tourner le serveur MCP.
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
 [[ -x "$NODE_BIN" ]] || { echo "$(date) node absent, on retentera"; exit 0; }
 
@@ -233,28 +242,37 @@ done
 TOKEN="$(op item get "$OP_ITEM" --fields "$OP_FIELD" --reveal 2>/dev/null)"
 [[ "$TOKEN" == tat_live_* ]] || { echo "token 1Password introuvable, retry prochain login"; exit 0; }
 
-# Merge NON destructif : préserve les autres serveurs MCP, (ré)écrit tatawin-vault.
+# Merge NON destructif dans les cibles Claude présentes : préserve les autres
+# serveurs MCP, (ré)écrit tatawin-vault. Toujours l'app Desktop ; + le CLI Claude
+# Code si installé (~/.local/bin/claude → config ~/.claude.json).
 CFG_DIR="$HOME/Library/Application Support/Claude"
-CFG="$CFG_DIR/claude_desktop_config.json"
 mkdir -p "$CFG_DIR"
-CFG="$CFG" NODE_BIN="$NODE_BIN" SERVER_JS="$VAULT_MCP_DIR/server.js" VAULT_TOKEN="$TOKEN" /usr/bin/python3 <<'PY'
+TARGETS="$CFG_DIR/claude_desktop_config.json"
+if command -v claude &>/dev/null || [[ -x "$HOME/.local/bin/claude" ]]; then
+    TARGETS="$TARGETS
+$HOME/.claude.json"
+fi
+NODE_BIN="$NODE_BIN" SERVER_JS="$VAULT_MCP_DIR/server.js" VAULT_TOKEN="$TOKEN" TARGETS="$TARGETS" /usr/bin/python3 <<'PY'
 import json, os
-cfg = os.environ["CFG"]
-try:
-    with open(cfg) as f: data = json.load(f)
-    if not isinstance(data, dict): data = {}
-except Exception:
-    data = {}
-data.setdefault("mcpServers", {})["tatawin-vault"] = {
+entry = {
     "command": os.environ["NODE_BIN"],
     "args": [os.environ["SERVER_JS"]],
     "env": {"VAULT_TOKEN": os.environ["VAULT_TOKEN"]},
 }
-tmp = cfg + ".tmp"
-with open(tmp, "w") as f: json.dump(data, f, indent=2)
-os.replace(tmp, cfg)
+for cfg in os.environ["TARGETS"].splitlines():
+    cfg = cfg.strip()
+    if not cfg: continue
+    try:
+        with open(cfg) as f: data = json.load(f)
+        if not isinstance(data, dict): data = {}
+    except Exception:
+        data = {}
+    data.setdefault("mcpServers", {})["tatawin-vault"] = entry
+    tmp = cfg + ".tmp"
+    with open(tmp, "w") as f: json.dump(data, f, indent=2)
+    os.replace(tmp, cfg)
+    os.chmod(cfg, 0o600)
 PY
-chmod 600 "$CFG"
 unset TOKEN VAULT_TOKEN
 # L'app relit sa config au démarrage : si elle tourne déjà, on la relance.
 if pgrep -x "Claude" >/dev/null 2>&1; then
