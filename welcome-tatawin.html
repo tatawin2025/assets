@@ -306,8 +306,8 @@
       badge:true},
 
     {kind:'step',eyebrow:'Étape 1 · Google',title:'Accède à ta boîte mail',
-      intro:"Connecte-toi à ta boîte Gmail avec le mot de passe temporaire qui t'a été fourni et choisis un nouveau mot de passe provisoire lui aussi. Pour l'instant il te sert juste à accéder à tes mails : on le remplacera par un mot de passe fort généré par 1Password à l'étape suivante.",
-      list:[['1','Va sur <a class="lnk" href="https://mail.google.com" target="_blank" rel="noopener">mail.google.com</a> et connecte-toi avec <b>prenom@tatawin.io</b> + le <b>mot de passe temporaire fourni</b>.'],['2','Google te demande d\'en <b>choisir un nouveau</b> — mets-en un pour l\'instant, on le sécurisera à l\'étape 2 avec 1Password.']],
+      intro:"Au démarrage du Mac (zero-touch), tu as déjà connecté ton compte Google et remplacé le mot de passe temporaire. Ici, on vérifie juste que tu accèdes bien à ta boîte — ce mot de passe sera remplacé par un mot de passe fort généré par 1Password à l'étape 2.",
+      list:[['1','Va sur <a class="lnk" href="https://mail.google.com" target="_blank" rel="noopener">mail.google.com</a> et connecte-toi avec <b>prenom@tatawin.io</b> + le <b>mot de passe que tu as défini au démarrage du Mac</b>.'],['2','Vérifie que tu reçois bien tes emails — tu y trouveras les <b>invitations 1Password et app Tatawin</b> pour les étapes suivantes.']],
       mock:mockGoogle},
 
     {kind:'step',eyebrow:'Étape 2 · 1Password & Google',title:'Configuration de 1Password et du compte Google',
@@ -317,7 +317,7 @@
 
     {kind:'step',eyebrow:'Étape 3 · App Tatawin',title:'Connecte l\'app Tatawin',
       intro:"L'app te connecte via Google, puis te demande son propre code de validation (indépendant de Google).",
-      list:[['1','Ouvre l\'<b>application Tatawin</b> depuis le dock.'],['2','Clique <b>« Se connecter avec Google »</b> et choisis ton compte <b>@tatawin.io</b>.'],['3','L\'app te demande de configurer sa <b>validation en deux étapes</b> : elle affiche un <b>QR code</b> (avec une <b>clé de configuration</b> en dessous).'],['4','Exactement comme pour Google : dans 1Password, ouvre (ou crée) ton élément <b>Tatawin</b> → <b>Modifier</b> → <b>« + ajouter plus »</b> → <b>« Mot de passe à usage unique »</b> → colle la <b>clé de configuration</b> de l\'app. 1Password affiche un <b>code à 6 chiffres</b> : saisis-le dans l\'app pour valider.']],
+      list:[['1','Dans ta <b>boîte Gmail</b>, ouvre l\'<b>email d\'invitation à l\'app Tatawin</b> et <b>clique le lien pour accepter l\'invitation</b> (sans ça, la connexion ne marchera pas).'],['2','Ouvre l\'<b>application Tatawin</b> depuis le dock.'],['3','Clique <b>« Se connecter avec Google »</b> et choisis ton compte <b>@tatawin.io</b>.'],['4','L\'app te demande de configurer sa <b>validation en deux étapes</b> : elle affiche un <b>QR code</b> (avec une <b>clé de configuration</b> en dessous).'],['5','Exactement comme pour Google : dans 1Password, ouvre (ou crée) ton élément <b>Tatawin</b> → <b>Modifier</b> → <b>« + ajouter plus »</b> → <b>« Mot de passe à usage unique »</b> → colle la <b>clé de configuration</b> de l\'app. 1Password affiche un <b>code à 6 chiffres</b> : saisis-le dans l\'app pour valider.']],
       mock:mockApp},
 
     {kind:'step',eyebrow:'Étape 4 · Slack',title:'Connecte l\'app Slack',
