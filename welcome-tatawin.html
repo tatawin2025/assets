@@ -335,6 +335,10 @@
       list:[['1','Ouvre l\'<b>application Slack</b> depuis le dock.'],['2','Clique <b>« Se connecter avec Google »</b> et choisis ton compte <b>@tatawin.io</b>.']],
       mock:mockSlack},
 
+    {kind:'step',eyebrow:'Étape 7 · Primo',title:'Inscris-toi sur Primo',
+      intro:"Primo gère la sécurité et la configuration de ton Mac (MDM). Tu reçois une invitation par email — comme pour les autres, tu enregistres sa validation en deux étapes dans 1Password.",
+      list:[['1','Dans ta <b>boîte Gmail</b>, ouvre l\'<b>email d\'invitation Primo</b> et <b>suis les indications pour créer ton compte</b>.'],['2','Quand Primo te demande sa <b>validation en deux étapes (MFA)</b> : <b>enregistre-la dans 1Password</b> — élément Primo → <b>Modifier</b> → <b>« + ajouter plus »</b> → <b>« Mot de passe à usage unique »</b> → colle la <b>clé de configuration</b>. 1Password affiche un <b>code à 6 chiffres</b> : saisis-le pour valider.']]},
+
     {kind:'done',eyebrow:'Terminé',title:'Tout est prêt. Bienvenue à bord 🎉',
       intro:"Ton poste est opérationnel. Voici ce qui est en place :",
       recap:['Google + validation en deux étapes configurés','App Tatawin connectée','Slack connecté','Claude connecté + vault Tatawin branché','Profils Dia créés + favoris remplis']}
