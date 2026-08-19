@@ -278,6 +278,8 @@
     +'<div class="twlogo">T</div>'
     +'<div class="twh">Bienvenue sur Tatawin</div>'
     +'<div class="twsub">Connectez-vous pour accéder au cockpit</div>'
+    +'<div class="twbtns" style="grid-template-columns:1fr"><span class="twb">'+GG+'Se connecter avec Google</span></div>'
+    +'<div class="twor">OU</div>'
     +'<div class="twlabel">Email</div><div class="twfield">votre@email.com</div>'
     +'<div class="twlabel">Mot de passe</div><div class="twfield">&nbsp;</div>'
     +'<div class="twsubmit">Se connecter</div>'
@@ -315,7 +317,7 @@
 
     {kind:'step',eyebrow:'Étape 3 · App Tatawin',title:'Connecte l\'app Tatawin',
       intro:"Tu reçois un email d'invitation à l'app Tatawin. Suis-le pour créer ton compte avec un mot de passe fort généré par 1Password, puis l'app te demande de configurer sa propre validation en deux étapes.",
-      list:[['1','Dans ta <b>boîte Gmail</b>, ouvre l\'<b>email d\'invitation à l\'app Tatawin</b> et <b>suis les indications pour créer ton compte</b>.'],['2','Quand on te demande un <b>mot de passe</b> : dans <b>1Password</b>, clique l\'<b>icône du générateur</b> pour un <b>mot de passe fort</b>, puis <b>enregistre les identifiants</b> (ton email <b>prenom@tatawin.io</b> + ce mot de passe) dans un <b>nouvel élément 1Password</b> nommé « Tatawin ».'],['3','L\'app te demande de configurer sa <b>validation en deux étapes</b> : elle affiche un <b>QR code</b> (avec une <b>clé de configuration</b> en dessous).'],['4','Comme pour Google : dans 1Password, ouvre ton élément <b>Tatawin</b> → <b>Modifier</b> → <b>« + ajouter plus »</b> → <b>« Mot de passe à usage unique »</b> → colle la <b>clé de configuration</b> de l\'app. 1Password affiche un <b>code à 6 chiffres</b> : saisis-le dans l\'app pour valider.']],
+      list:[['1','Dans ta <b>boîte Gmail</b>, ouvre l\'<b>email d\'invitation à l\'app Tatawin</b> et <b>suis les indications pour créer ton compte</b>.'],['2','Quand on te demande un <b>mot de passe</b> : dans <b>1Password</b>, clique l\'<b>icône du générateur</b> pour un <b>mot de passe fort</b>, puis <b>enregistre les identifiants</b> (ton email <b>prenom@tatawin.io</b> + ce mot de passe) dans un <b>nouvel élément 1Password</b> nommé « Tatawin ».'],['3','<b>Une fois inscrit, lance l\'application Tatawin</b> depuis le dock et <b>connecte-toi</b>. Deux méthodes au choix : ton <b>email + mot de passe</b>, ou <b>« Se connecter avec Google »</b> (avec tes identifiants Google).'],['4','L\'app te demande de configurer sa <b>validation en deux étapes</b> : elle affiche un <b>QR code</b> (avec une <b>clé de configuration</b> en dessous).'],['5','Comme pour Google : dans 1Password, ouvre ton élément <b>Tatawin</b> → <b>Modifier</b> → <b>« + ajouter plus »</b> → <b>« Mot de passe à usage unique »</b> → colle la <b>clé de configuration</b> de l\'app. 1Password affiche un <b>code à 6 chiffres</b> : saisis-le dans l\'app pour valider.']],
       mock:mockApp},
 
     {kind:'step',eyebrow:'Étape 4 · Claude',title:'Connecte-toi à Claude',
