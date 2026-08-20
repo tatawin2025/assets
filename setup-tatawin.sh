@@ -201,24 +201,18 @@ cat > /Library/Scripts/tatawin-claude-setup.sh << 'USERSCRIPT'
 # PATH minimal en LaunchAgent → on ajoute les emplacements de op/node/claude.
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin"
 exec >> "$HOME/Library/Logs/tatawin-claude-setup.log" 2>&1
-MARKER="$HOME/.tatawin-claude-configured"
+# Cet agent installe l'OUTILLAGE (Claude Code + wrappers + commande de branchement).
+# Il NE fait PLUS le branchement du vault : op en LaunchAgent ne peut pas obtenir le
+# token de façon fiable (autorisations TCC macOS + accès CLI 1Password ne collent pas
+# en non-interactif → prompt en boucle). Le branchement = commande interactive
+# `tatawin-branch-vault` lancée par l'employé (Welcome guide, étape Claude).
+MARKER="$HOME/.tatawin-tooling-installed"
 [[ -f "$MARKER" ]] && exit 0
 VAULT_MCP_DIR="/Library/Application Support/Tatawin/vault-mcp"
-# Convention figée (2026-08-17) : le token vault de l'employé est déposé par l'IT
-# dans un COFFRE 1Password PARTAGÉ par employé (Luc + l'employé), item type
-# « Identifiant d'API », nommé EXACTEMENT « Tatawin — Vault Token », champ « credential ».
-# Coffre par employé = l'employé n'y voit qu'un seul item de ce nom (pas de collision
-# du lookup `op item get`) et le token reste cloisonné. Ne PAS mettre dans un coffre
-# d'équipe partagé (collision + fuite entre employés). Token minté dans Tatacontrol
-# (bouton « Token vault » du panneau droits → create_app_token_for, affiché 1×).
-OP_ITEM="Tatawin — Vault Token"
-OP_FIELD="credential"
 [[ -f "$VAULT_MCP_DIR/server.js" ]] || { echo "$(date) bundle absent, on retentera"; exit 0; }
 
-# On branche le vault dans l'APP Claude Desktop (~/Library/Application Support/
-# Claude/claude_desktop_config.json) ET, si le CLI Claude Code est installé, dans
-# sa config utilisateur (~/.claude.json). Même serveur MCP, même bundle Node, même
-# token. Node (posé par le setup) fait tourner le serveur MCP.
+# Node (posé par le setup) fait tourner le serveur MCP vault (utilisé par la commande
+# de branchement interactive `tatawin-branch-vault`, posée plus bas).
 NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
 [[ -x "$NODE_BIN" ]] || { echo "$(date) node absent, on retentera"; exit 0; }
 
@@ -238,54 +232,20 @@ if [[ ! -x "$HOME/bin/gws" || ! -x "$HOME/bin/fleet" ]]; then
     curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli.sh" | bash >/dev/null 2>&1 && echo "$(date) - wrappers Tatawin posés" || echo "$(date) WARN install wrappers"
 fi
 
-# L'intégration app 1Password peut voir les comptes sans session ouverte : `op
-# whoami` échoue alors que `op item get` s'authentifie par Touch ID. On tente donc
-# d'ouvrir une session (no-op si l'intégration authentifie par commande), puis on
-# récupère directement le token. Pas de gate strict sur whoami.
-if ! op whoami &>/dev/null; then
-    eval "$(op signin --account tatawin.1password.eu 2>/dev/null)" || true
-fi
-TOKEN="$(op item get "$OP_ITEM" --fields "$OP_FIELD" --reveal 2>/dev/null)"
-[[ "$TOKEN" == tat_live_* ]] || { echo "$(date) token vault introuvable (op verrouillé / item absent), retry prochain login"; exit 0; }
+# Commande de branchement du vault (INTERACTIVE) → ~/bin. Le branchement N'EST PLUS
+# fait par cet agent (op en arrière-plan = prompt TCC/1Password en boucle). L'employé
+# lance `tatawin-branch-vault` UNE fois en Terminal (Welcome guide, étape Claude) : op
+# tourne au premier plan, il approuve la/les demande(s) une fois, le vault est branché.
+mkdir -p "$HOME/bin"
+curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/tatawin-branch-vault.sh" -o "$HOME/bin/tatawin-branch-vault" 2>/dev/null \
+  && chmod +x "$HOME/bin/tatawin-branch-vault" && echo "$(date) - commande tatawin-branch-vault posée"
 
-# Merge NON destructif dans les cibles Claude présentes : préserve les autres
-# serveurs MCP, (ré)écrit tatawin-vault. Toujours l'app Desktop ; + le CLI Claude
-# Code si installé (~/.local/bin/claude → config ~/.claude.json).
-CFG_DIR="$HOME/Library/Application Support/Claude"
-mkdir -p "$CFG_DIR"
-TARGETS="$CFG_DIR/claude_desktop_config.json"
-if command -v claude &>/dev/null || [[ -x "$HOME/.local/bin/claude" ]]; then
-    TARGETS="$TARGETS
-$HOME/.claude.json"
+# Marker quand l'outillage est prêt (Claude Code + wrappers + commande de branchement)
+# → l'agent s'arrête (plus aucun appel op, donc plus de prompt en boucle).
+if { command -v claude &>/dev/null || [[ -x "$HOME/.local/bin/claude" ]]; } && [[ -x "$HOME/bin/gws" && -x "$HOME/bin/tatawin-branch-vault" ]]; then
+    touch "$MARKER"
+    echo "$(date) - outillage prêt — branchement vault = commande interactive tatawin-branch-vault"
 fi
-NODE_BIN="$NODE_BIN" SERVER_JS="$VAULT_MCP_DIR/server.js" VAULT_TOKEN="$TOKEN" TARGETS="$TARGETS" /usr/bin/python3 <<'PY'
-import json, os
-entry = {
-    "command": os.environ["NODE_BIN"],
-    "args": [os.environ["SERVER_JS"]],
-    "env": {"VAULT_TOKEN": os.environ["VAULT_TOKEN"]},
-}
-for cfg in os.environ["TARGETS"].splitlines():
-    cfg = cfg.strip()
-    if not cfg: continue
-    try:
-        with open(cfg) as f: data = json.load(f)
-        if not isinstance(data, dict): data = {}
-    except Exception:
-        data = {}
-    data.setdefault("mcpServers", {})["tatawin-vault"] = entry
-    tmp = cfg + ".tmp"
-    with open(tmp, "w") as f: json.dump(data, f, indent=2)
-    os.replace(tmp, cfg)
-    os.chmod(cfg, 0o600)
-PY
-unset TOKEN VAULT_TOKEN
-# L'app relit sa config au démarrage : si elle tourne déjà, on la relance.
-if pgrep -x "Claude" >/dev/null 2>&1; then
-    osascript -e 'quit app "Claude"' 2>/dev/null; sleep 2; open -a "Claude" 2>/dev/null
-fi
-touch "$MARKER"
-echo "$(date) - Vault branché dans Claude (Desktop + Code si présent)"
 USERSCRIPT
 chmod 755 /Library/Scripts/tatawin-claude-setup.sh
 cat > /Library/LaunchAgents/com.tatawin.claude-setup.plist << 'PLIST'
