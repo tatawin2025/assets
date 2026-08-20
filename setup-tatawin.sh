@@ -35,8 +35,9 @@ DESKTOPPR_PATH="/usr/local/bin/desktoppr"
 DOCKUTIL_URL="https://github.com/kcrawford/dockutil/releases/download/3.0.2/dockutil-3.0.2.pkg"
 DOCKUTIL_PATH="/usr/local/bin/dockutil"
 NODE_PKG_URL="https://nodejs.org/dist/v20.17.0/node-v20.17.0.pkg"
-# 1Password CLI (op) = REQUIS : l'agent Claude récupère le token vault via `op item get`
-# sur la machine (jamais via Fleet). Sans op, le vault ne se branche jamais. Pkg officiel.
+# 1Password CLI (op) = REQUIS : la commande interactive `tatawin-branch-vault` (lancée UNE fois
+# par l'employé) récupère le token vault via `op item get` au premier plan (jamais via Fleet, jamais
+# en agent — cf. boucle TCC résolue 19/08). Sans op, le vault ne se branche jamais. Pkg officiel.
 OP_PKG_URL="https://cache.agilebits.com/dist/1P/op2/pkg/v2.34.0/op_apple_universal_v2.34.0.pkg"
 # Bundle vault-mcp = release "vault-mcp" sur tatawin2025/assets (server.js + bootstrap, sans secret).
 VAULT_MCP_DIST_URL="https://github.com/tatawin2025/assets/releases/download/vault-mcp/vault-mcp.tar.gz"
@@ -52,9 +53,13 @@ WELCOME_PATH="/Library/Application Support/Tatawin/welcome.html"
 # com.anthropic.claudefordesktop — le build validé, PAS le nest ni claude-science). Les
 # deux s'auto-updatent ensuite via leur updater intégré. Retirés du script le 18/08 pour
 # ne pas charger ~1 Go de download dans le budget ~600s du setup experience (risque timeout).
-# Tatawin.app = vraie app native (WKWebView, fenêtre standalone), pré-buildée +
-# signée ad-hoc, hébergée sur assets. Remplace l'ancien wrapper osacompile qui
-# ouvrait app.tatawin.io dans Safari.
+# Tatawin.app + Welcome guide.app = vraies apps natives (WKWebView, fenêtre standalone,
+# menu Édition ⌘C/⌘V), pré-buildées + signées ad-hoc, hébergées sur assets. Remplace l'ancien
+# wrapper osacompile qui ouvrait app.tatawin.io dans Safari.
+# ⚠️ SOURCE + BUILD REPRODUCTIBLE : tools/primo/tatawin-app/{Tatawin,Welcome}.swift + build-apps.sh.
+# Après toute modif d'un .swift : `./build-apps.sh --publish` (rebuild universal+signé + upload
+# assets, avec garde-fou menu). Sans ça, le republish manuel ne prend pas et les onboardings
+# réinstallent l'ancienne version cassée (cas vécu 20/08 : menu Édition perdu sur assets).
 TATAWIN_APP_URL="https://github.com/tatawin2025/assets/releases/download/tatawin-app/tatawin-app.tar.gz"
 # App native du guide de bienvenue (WKWebView du welcome.html local, icône 👋) posée sur le Bureau
 WELCOME_APP_URL="https://github.com/tatawin2025/assets/releases/download/welcome-app/welcome-app.tar.gz"
