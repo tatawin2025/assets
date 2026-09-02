@@ -194,6 +194,13 @@ else
 fi
 rm -f /tmp/vault-mcp.tar.gz
 
+# Sync du bundle : sans ça, le bundle n'est posé qu'ici, au provisioning, et un outil MCP
+# ajouté plus tard n'atteint jamais un poste déjà en service. Le LaunchDaemon compare toutes
+# les heures et ne remplace qu'en cas d'écart (garde-fous : rien n'est touché si la release
+# est injoignable, illisible, ou si le server.js reçu ne parse pas).
+curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-vault-mcp-sync.sh" | bash >/dev/null 2>&1 \
+    && echo "$(date) - Sync du bundle vault-mcp installée" || echo "$(date) WARN install sync vault-mcp"
+
 # === 1Password CLI (op) — requis par l'agent Claude pour lire le token vault ===
 if ! command -v op &>/dev/null && [[ ! -x /usr/local/bin/op ]]; then
     curl -fL -o /tmp/op.pkg "$OP_PKG_URL" && installer -pkg /tmp/op.pkg -target / && echo "$(date) - op (1Password CLI) installé"
