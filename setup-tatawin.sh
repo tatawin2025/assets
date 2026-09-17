@@ -200,6 +200,10 @@ rm -f /tmp/vault-mcp.tar.gz
 # est injoignable, illisible, ou si le server.js reçu ne parse pas).
 curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-vault-mcp-sync.sh" | bash >/dev/null 2>&1 \
     && echo "$(date) - Sync du bundle vault-mcp installée" || echo "$(date) WARN install sync vault-mcp"
+# Même traitement pour les wrappers ~/bin (gws/fleet/msgraph/primo/slack/notion/abm) : sans ça,
+# un wrapper ajouté ou corrigé après le provisioning n'atteint jamais un poste en service.
+curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli-sync.sh" | bash >/dev/null 2>&1 \
+    && echo "$(date) - Sync des wrappers tatawin-cli installée" || echo "$(date) WARN install sync tatawin-cli"
 
 # === 1Password CLI (op) — requis par l'agent Claude pour lire le token vault ===
 if ! command -v op &>/dev/null && [[ ! -x /usr/local/bin/op ]]; then
