@@ -46,11 +46,17 @@ Tu es branché au **vault Tatawin** — la base de connaissance interne de l'éq
 - **Toute action qui modifie un tenant client, la prod, ou un déploiement** = **validation humaine explicite AVANT** exécution (annoncer l'action exacte + le tenant + l'impact + la réversibilité). La **lecture** est libre.
 - **Secrets** (tokens, mots de passe, clés API) : jamais en clair, jamais dans un message, jamais commités — ils vivent dans **1Password**.
 
-## Outils API clients (si tu as l'accès)
+## Outils API clients — un seul chemin
 
-Des wrappers sont dans `~/bin` : `gws` (Google Workspace), `fleet` (MDM Fleet/Primo), `notion`, `primo`, `slack`. Ils appellent les API clients via un **proxy audité** (auth + allowlist + audit), token lu dans 1Password à l'exécution (Touch ID). Ils ne fonctionnent que si tu es **membre du coffre 1Password « Tatawin / Interne »**.
+Six wrappers dans `~/bin`, même forme : `<outil> <slug> <METHOD> <path> [body.json]`, avec `<slug>` = sous-domaine MDM du client (`homa`, `evaneos`, `unlimitail`, `wamiz`…). Chacun passe par un **proxy audité** (`<outil>-proxy` : token perso + accès org + allowlist + capability + audit) avec **ton token personnel** — le même que le vault, posé par `tatawin-branch-vault`. Tu n'as rien d'autre à configurer.
 
-- `gws <client> <api> <METHOD> <path> [body.json]` — ex. `gws homeexchange directory GET '/users/marie@homeexchange.com'`. Écriture = `gws --write …` (confirmer avant).
-- `fleet [--admin] <slug> <METHOD> <path> [body.json]` — `<slug>` = sous-domaine MDM de l'org. `--admin` pour les actions/diags.
+- `gws [--write] <slug> <api> <METHOD> <path>` — Google Workspace. Ex. `gws homeexchange directory GET '/users/marie@homeexchange.com'`. Toute méthode non-GET exige `--write` et une confirmation de l'humain.
+- `fleet [--admin] <slug> <METHOD> <path>` — Fleet MDM. Ex. `fleet homa GET '/hosts?per_page=10'`.
+- `msgraph <slug> <METHOD> <path>` — Microsoft Graph / Entra. Ex. `msgraph unlimitail GET /organization`. Pas de suppression d'objet annuaire, pas de rôle admin, pas de clés BitLocker (celles-ci sont dans Fleet).
+- `primo [--admin] <slug> <METHOD> <path>` — Primo. Ex. `primo unlimitail GET '/devices?perPage=50'`.
+- `slack <slug> <METHOD> <path>` — Slack (lecture, canaux, membres ; jamais d'envoi).
+- `notion <slug> <METHOD> <path>` — Notion du client.
+
+**Tes droits sont réglés dans l'app par un admin** (Luc ou Benoit), capability par capability, client par client. **Un accès se teste, il ne se suppose pas** : lance l'appel de lecture. Le seul « tu n'as pas accès » valide est un **403 du proxy, cité mot pour mot** — `Droit insuffisant : « primo.script » requis sur ce client` veut dire exactement ça, et le remède est côté admin dans l'app. Ne déduis jamais un accès de la liste des serveurs MCP, d'un souvenir ou d'une page : les serveurs MCP `primo-<client>` sont un ancien chemin abandonné, leur présence ne dit rien. Référence complète : `vault_get cross-tool/acces-api-clients.md`.
 
 Détail des procédures : cherche le geste concerné dans le vault (`vault_grep`).
