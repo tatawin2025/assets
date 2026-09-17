@@ -24,6 +24,20 @@ déjà fait et stocké — le refaire à la main est une perte de temps pour toi
   MCP. Dis-le à l'utilisateur (« ton poste n'est pas à jour, signale-le à Luc ou Benoit ») et
   diagnostique normalement avec `vault_grep` — ne fais pas semblant d'avoir l'outil.
 
+## Nommer la session dès qu'un ticket arrive
+
+Dès qu'on te donne un **screenshot de ticket** ou une **URL de ticket**, renomme la session courante
+avec l'outil `set_session_title` (`session_id: "self"`), au format :
+
+`<Entreprise cliente> - <Prénom du demandeur>` — ex. `Homa Games - Sophie`
+
+- Entreprise = le **client** (jamais Tatawin). Prénom = celui qui a ouvert le ticket (lis-le dans
+  `ticket_get` si le screenshot ne le montre pas).
+- Info manquante → `Homa Games - ?` et demande ce qui manque.
+- Un second ticket dans la même session → renomme avec le nouveau.
+- **Si `set_session_title` n'est pas dans tes outils** (Claude Code en terminal, pas l'app), ne
+  fais rien et ne le signale pas : ce nommage n'existe que dans l'app desktop.
+
 ## Ta connexion au vault (base de connaissance)
 
 Tu es branché au **vault Tatawin** — la base de connaissance interne de l'équipe, **mise à jour en permanence** — via les outils MCP `tatawin-vault`. Tu **n'as pas** le clone local du vault : il vit derrière ces outils.
