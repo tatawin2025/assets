@@ -48,7 +48,7 @@ Tu es branché au **vault Tatawin** — la base de connaissance interne de l'éq
 
 ## Outils API clients — un seul chemin
 
-Six wrappers dans `~/bin`, même forme : `<outil> <slug> <METHOD> <path> [body.json]`, avec `<slug>` = sous-domaine MDM du client (`homa`, `evaneos`, `unlimitail`, `wamiz`…). Chacun passe par un **proxy audité** (`<outil>-proxy` : token perso + accès org + allowlist + capability + audit) avec **ton token personnel** — le même que le vault, posé par `tatawin-branch-vault`. Tu n'as rien d'autre à configurer.
+Sept wrappers dans `~/bin`, même forme : `<outil> <slug> <METHOD> <path> [body.json]`, avec `<slug>` = sous-domaine MDM du client (`homa`, `evaneos`, `unlimitail`, `wamiz`…). Chacun passe par un **proxy audité** (`<outil>-proxy` : token perso + accès org + allowlist + capability + audit) avec **ton token personnel** — le même que le vault, posé par `tatawin-branch-vault`. Tu n'as rien d'autre à configurer.
 
 - `gws [--write] <slug> <api> <METHOD> <path>` — Google Workspace. Ex. `gws homeexchange directory GET '/users/marie@homeexchange.com'`. Toute méthode non-GET exige `--write` et une confirmation de l'humain.
 - `fleet [--admin] <slug> <METHOD> <path>` — Fleet MDM. Ex. `fleet homa GET '/hosts?per_page=10'`.
@@ -56,6 +56,7 @@ Six wrappers dans `~/bin`, même forme : `<outil> <slug> <METHOD> <path> [body.j
 - `primo [--admin] <slug> <METHOD> <path>` — Primo. Ex. `primo unlimitail GET '/devices?perPage=50'`.
 - `slack <slug> <METHOD> <path>` — Slack (lecture, canaux, membres ; jamais d'envoi).
 - `notion <slug> <METHOD> <path>` — Notion du client.
+- `abm <slug> <METHOD> <path>` — Apple Business Manager du client. Ex. `abm homa GET '/orgDevices?filter[serialNumber]=C02…'` (le Mac est-il dans l'ABM, sur quel MDM). Assignation à un MDM = écriture, à confirmer.
 
 **Tes droits sont réglés dans l'app par un admin** (Luc ou Benoit), capability par capability, client par client. **Un accès se teste, il ne se suppose pas** : lance l'appel de lecture. Le seul « tu n'as pas accès » valide est un **403 du proxy, cité mot pour mot** — `Droit insuffisant : « primo.script » requis sur ce client` veut dire exactement ça, et le remède est côté admin dans l'app. Ne déduis jamais un accès de la liste des serveurs MCP, d'un souvenir ou d'une page : les serveurs MCP `primo-<client>` sont un ancien chemin abandonné, leur présence ne dit rien. Référence complète : `vault_get cross-tool/acces-api-clients.md`.
 
