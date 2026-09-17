@@ -4,9 +4,16 @@
 # Chantier 4. Déployer via Fleet (tenant/team MDM TATAWIN, tatawin.mdm.getprimo.com) :
 #   Controls → Setup experience → Run script.
 #
+# ⚠️ SOURCE = ce fichier (vault). PUBLICATION = tatawin2025/assets/setup-tatawin.sh, ce que
+# les Mac exécutent. Ne JAMAIS éditer assets directement (les deux ont divergé une fois,
+# 2026-09-17, ~70 lignes dans les deux sens). Après toute modif ici :
+#   gh api -X PUT repos/tatawin2025/assets/contents/setup-tatawin.sh -f message="…" \
+#     -f content="$(base64 -i tools/primo/scripts/setup-tatawin.sh | tr -d '\n')" \
+#     -f sha="$(gh api repos/tatawin2025/assets/contents/setup-tatawin.sh --jq .sha)"
+#
 # Fait, au 1er boot d'un Mac neuf enrôlé :
 #   - Wallpaper Tatawin
-#   - Dock : Dia, Slack, 1Password, Claude, Tatawin
+#   - Dock : Dia, Slack, 1Password, Claude, Tatawin, Primo
 #   - Fuseau horaire automatique
 #   - Node + bundle vault-mcp, puis (au 1er login) branchement de Claude au vault
 #     via le token tat_live_ de l'employé (récupéré depuis 1Password).
@@ -56,11 +63,16 @@ WELCOME_PATH="/Library/Application Support/Tatawin/welcome.html"
 # Tatawin.app + Welcome guide.app = vraies apps natives (WKWebView, fenêtre standalone,
 # menu Édition ⌘C/⌘V), pré-buildées + signées ad-hoc, hébergées sur assets. Remplace l'ancien
 # wrapper osacompile qui ouvrait app.tatawin.io dans Safari.
-# ⚠️ SOURCE + BUILD REPRODUCTIBLE : tools/primo/tatawin-app/{Tatawin,Welcome}.swift + build-apps.sh.
+# ⚠️ SOURCE + BUILD REPRODUCTIBLE : tools/primo/tatawin-app/{Tatawin,Primo,Welcome}.swift + build-apps.sh.
 # Après toute modif d'un .swift : `./build-apps.sh --publish` (rebuild universal+signé + upload
 # assets, avec garde-fou menu). Sans ça, le republish manuel ne prend pas et les onboardings
 # réinstallent l'ancienne version cassée (cas vécu 20/08 : menu Édition perdu sur assets).
 TATAWIN_APP_URL="https://github.com/tatawin2025/assets/releases/download/tatawin-app/tatawin-app.tar.gz"
+# Primo.app = même moule que Tatawin.app (WKWebView → app.getprimo.com, icône Primo 1024,
+# menu Édition + Affichage, téléchargements câblés pour les installeurs d'enrôlement).
+# ⚠️ PAS la web app Safari (celle de ~/Applications) : elle est par-utilisateur, son conteneur
+# est lié à un UUID local → non déployable en zero-touch. Source : tatawin-app/Primo.swift.
+PRIMO_APP_URL="https://github.com/tatawin2025/assets/releases/download/primo-app/primo-app.tar.gz"
 # App native du guide de bienvenue (WKWebView du welcome.html local, icône 👋) posée sur le Bureau
 WELCOME_APP_URL="https://github.com/tatawin2025/assets/releases/download/welcome-app/welcome-app.tar.gz"
 
@@ -123,16 +135,55 @@ fi
 # Tatacontrol est une PWA (vite-plugin-pwa). On crée un wrapper .app léger qui
 # ouvre app.tatawin.io — dock-able, déployable en zero-touch. Packaging natif
 # (Electron/Tauri) = éventuel plus tard, pas nécessaire pour le dock.
-if [[ ! -d "/Applications/Tatawin.app" ]]; then
-    if curl -fL -o /tmp/tatawin-app.tar.gz "$TATAWIN_APP_URL" && [[ -s /tmp/tatawin-app.tar.gz ]]; then
-        tar -xzf /tmp/tatawin-app.tar.gz -C /Applications/
-        xattr -dr com.apple.quarantine /Applications/Tatawin.app 2>/dev/null
-        echo "$(date) - Tatawin.app (native WKWebView) installée"
+# On (ré)installe même si l'app est déjà là, tant que la version diffère : un
+# poste onboardé gardait sinon à vie la version du jour de son setup (cas vécu
+# 21/08 : Mac resté en 1.2, sans menu Recharger, donc bloqué sur une vieille
+# version de la page web). Mise à jour d'un parc déjà déployé : le script
+# tools/primo/scripts/update-tatawin-app.sh, à lancer via Fleet.
+if curl -fL -o /tmp/tatawin-app.tar.gz "$TATAWIN_APP_URL" && [[ -s /tmp/tatawin-app.tar.gz ]]; then
+    rm -rf /tmp/tatawin-app && mkdir -p /tmp/tatawin-app
+    tar -xzf /tmp/tatawin-app.tar.gz -C /tmp/tatawin-app
+    NEW_VER=$(defaults read /tmp/tatawin-app/Tatawin.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null || echo "?")
+    CUR_VER=$(defaults read /Applications/Tatawin.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null || echo "absente")
+    if [[ "$CUR_VER" == "$NEW_VER" ]]; then
+        echo "$(date) - Tatawin.app déjà en $CUR_VER"
     else
-        echo "$(date) - WARN : Tatawin.app indisponible (asset à publier)"
+        xattr -dr com.apple.quarantine /tmp/tatawin-app/Tatawin.app 2>/dev/null
+        rm -rf /Applications/Tatawin.app.old
+        [[ -d /Applications/Tatawin.app ]] && mv /Applications/Tatawin.app /Applications/Tatawin.app.old
+        ditto /tmp/tatawin-app/Tatawin.app /Applications/Tatawin.app
+        rm -rf /Applications/Tatawin.app.old
+        echo "$(date) - Tatawin.app (native WKWebView) $CUR_VER → $NEW_VER"
     fi
-    rm -f /tmp/tatawin-app.tar.gz
+    rm -rf /tmp/tatawin-app
+else
+    echo "$(date) - WARN : Tatawin.app indisponible (asset à publier)"
 fi
+rm -f /tmp/tatawin-app.tar.gz
+
+# === APP PRIMO (console MDM app.getprimo.com) ==============================
+# Même logique de version que Tatawin.app : on réinstalle dès que la version diffère,
+# sinon un poste onboardé garderait à vie le build du jour de son setup.
+if curl -fL -o /tmp/primo-app.tar.gz "$PRIMO_APP_URL" && [[ -s /tmp/primo-app.tar.gz ]]; then
+    rm -rf /tmp/primo-app && mkdir -p /tmp/primo-app
+    tar -xzf /tmp/primo-app.tar.gz -C /tmp/primo-app
+    NEW_VER=$(defaults read /tmp/primo-app/Primo.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null || echo "?")
+    CUR_VER=$(defaults read /Applications/Primo.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null || echo "absente")
+    if [[ "$CUR_VER" == "$NEW_VER" ]]; then
+        echo "$(date) - Primo.app déjà en $CUR_VER"
+    else
+        xattr -dr com.apple.quarantine /tmp/primo-app/Primo.app 2>/dev/null
+        rm -rf /Applications/Primo.app.old
+        [[ -d /Applications/Primo.app ]] && mv /Applications/Primo.app /Applications/Primo.app.old
+        ditto /tmp/primo-app/Primo.app /Applications/Primo.app
+        rm -rf /Applications/Primo.app.old
+        echo "$(date) - Primo.app (native WKWebView) $CUR_VER → $NEW_VER"
+    fi
+    rm -rf /tmp/primo-app
+else
+    echo "$(date) - WARN : Primo.app indisponible (asset à publier)"
+fi
+rm -f /tmp/primo-app.tar.gz
 
 # === DOCK (au 1er login de chaque user) ====================================
 cat > /Library/Scripts/tatawin-dock-setup.sh << 'DOCKSCRIPT'
@@ -146,8 +197,8 @@ while ! pgrep -x "Dock" &>/dev/null || ! pgrep -x "Finder" &>/dev/null; do
 done
 sleep 5
 "$DOCKUTIL" --remove all --no-restart
-# Dia, Slack, 1Password, Claude (Desktop), Tatawin. On n'ajoute que les .app présents.
-for app in "/Applications/Dia.app" "/Applications/Slack.app" "/Applications/1Password.app" "/Applications/Claude.app" "/Applications/Tatawin.app"; do
+# Dia, Slack, 1Password, Claude (Desktop), Tatawin, Primo. On n'ajoute que les .app présents.
+for app in "/Applications/Dia.app" "/Applications/Slack.app" "/Applications/1Password.app" "/Applications/Claude.app" "/Applications/Tatawin.app" "/Applications/Primo.app"; do
     [[ -d "$app" ]] && "$DOCKUTIL" --add "$app" --no-restart
 done
 defaults write com.apple.dock tilesize -integer 46
