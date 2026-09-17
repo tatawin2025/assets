@@ -2,15 +2,15 @@
 # =============================================================================
 # install-tatawin-cli.sh — pose les wrappers Tatawin dans ~/bin.
 #
-# Wrappers : gws, fleet, notion, primo, slack (+ op-cached, _lib/op-cache.sh).
-# Chacun appelle une edge function proxy (auth + allowlist + audit) et lit son
-# token app dans 1Password (coffre « Tatawin / Interne ») à l'exécution.
+# Wrappers : gws, fleet, msgraph, notion, primo, slack, abm (+ op-cached, _lib/op-cache.sh).
+# Chacun appelle une edge function proxy (auth + allowlist + capability + audit)
+# avec le token PERSONNEL du membre (celui du MCP vault, posé par tatawin-branch-vault).
 #
 # AUCUN SECRET dans les scripts (juste l'URL Supabase + l'anon key publique) :
 # le package est donc hébergé en clair sur tatawin2025/assets. Les wrappers sont
-# INERTES tant que la personne n'a pas accès aux items token dans 1Password —
-# c'est là (appartenance au coffre « Tatawin / Interne ») que se joue l'accès
-# réel aux API clients, pas dans la présence des scripts.
+# INERTES tant que le poste n'a pas de token personnel, et ne font que ce que les
+# capabilities de la personne (réglées dans l'app) autorisent — c'est là que se
+# joue l'accès réel aux API clients, pas dans la présence des scripts.
 #
 # Prérequis : op (1Password CLI) installé + intégration app activée. jq est
 # fourni par macOS 15+ ; sinon on pose un binaire statique dans ~/bin.
@@ -25,7 +25,7 @@ mkdir -p "$HOME/bin"
 curl -fsSL "$PKG_URL" -o /tmp/tatawin-cli.tar.gz
 tar -xzf /tmp/tatawin-cli.tar.gz -C "$HOME/bin"
 rm -f /tmp/tatawin-cli.tar.gz
-for w in gws fleet notion primo slack op-cached; do
+for w in gws fleet msgraph notion primo slack abm op-cached; do
   [[ -f "$HOME/bin/$w" ]] && chmod +x "$HOME/bin/$w"
 done
 echo "→ wrappers posés dans ~/bin"
