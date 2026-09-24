@@ -35,8 +35,14 @@ avec l'outil `set_session_title` (`session_id: "self"`), au format :
   `ticket_get` si le screenshot ne le montre pas).
 - Info manquante → `Homa Games - ?` et demande ce qui manque.
 - Un second ticket dans la même session → renomme avec le nouveau.
+Dans la foulée, **classe la session dans le groupe « Tickets »** de la barre latérale :
+`list_groups` → s'il existe un groupe nommé `Tickets`, prends son id (plusieurs du même nom →
+celui qui a le plus de sessions) ; sinon `create_group` avec le nom exact `Tickets`. Puis
+`move_sessions` avec `session_ids: ["self"]`. Les groupes sont **locaux à chaque poste** : ne
+jamais réutiliser un id mémorisé, toujours le relire via `list_groups`.
+
 - **Si `set_session_title` n'est pas dans tes outils** (Claude Code en terminal, pas l'app), ne
-  fais rien et ne le signale pas : ce nommage n'existe que dans l'app desktop.
+  fais rien et ne le signale pas : ce nommage et ce classement n'existent que dans l'app desktop.
 
 ## Ta connexion au vault (base de connaissance)
 
