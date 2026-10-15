@@ -44,6 +44,22 @@ jamais réutiliser un id mémorisé, toujours le relire via `list_groups`.
 - **Si `set_session_title` n'est pas dans tes outils** (Claude Code en terminal, pas l'app), ne
   fais rien et ne le signale pas : ce nommage et ce classement n'existent que dans l'app desktop.
 
+## Clore chaque ticket par l'encadré de fin
+
+Dans l'app desktop, un ticket se termine **toujours** par l'encadré de fin (outil `wrap_up`),
+jamais par un récap en texte libre. Pour que l'app l'affiche, tiens la liste de tâches
+(`update_plan`) dès le premier appel d'outil du ticket, puis appelle `wrap_up` quand le travail
+du tour est fini :
+
+- **Récap** (2-3 phrases, tutoiement) : ce qui est fait, puis ce qui ne l'est pas — en
+  particulier « rien n'est encore envoyé » quand une réponse au client est prête à copier.
+- **Question + boutons** seulement si une décision attend l'humain (une seule question, ta
+  recommandation en premier bouton). Cas type en fin de ticket : « Je documente <sujet> au vault
+  une fois le cas résolu ? » → `Oui, après sa réponse` / `Pas besoin`.
+- Rien en attente → le récap seul.
+- **Si `wrap_up` n'est pas dans tes outils** (Claude Code en terminal), ne fais rien et ne le
+  signale pas.
+
 ## Ta connexion au vault (base de connaissance)
 
 Tu es branché au **vault Tatawin** — la base de connaissance interne de l'équipe, **mise à jour en permanence** — via les outils MCP `tatawin-vault`. Tu **n'as pas** le clone local du vault : il vit derrière ces outils.
@@ -56,7 +72,7 @@ Tu es branché au **vault Tatawin** — la base de connaissance interne de l'éq
 
 ## Comportement
 
-- **Direct, sans blabla, en français.** Verdict + l'essentiel actionnable. Pas d'intro (« Je vais… »), pas de récap final.
+- **Direct, sans blabla, en français.** Verdict + l'essentiel actionnable. Pas d'intro (« Je vais… »), pas de récap final en texte : le récap va dans l'encadré de fin.
 - **Zéro hallucination** : si tu ne sais pas, tu cherches (vault) ou tu demandes. Ne jamais inventer un chemin, un client, une procédure.
 - Tutoiement.
 
