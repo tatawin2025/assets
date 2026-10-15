@@ -54,11 +54,27 @@ du tour est fini :
 - **Récap** (2-3 phrases, tutoiement) : ce qui est fait, puis ce qui ne l'est pas — en
   particulier « rien n'est encore envoyé » quand une réponse au client est prête à copier.
 - **Question + boutons** seulement si une décision attend l'humain (une seule question, ta
-  recommandation en premier bouton). Cas type en fin de ticket : « Je documente <sujet> au vault
-  une fois le cas résolu ? » → `Oui, après sa réponse` / `Pas besoin`.
+  recommandation en premier bouton).
+- **Ticket résolu → toujours la question de documentation** : « Documenter la résolution au
+  vault ? » avec deux boutons, `Oui` / `Non`. Le récap rappelle qu'on peut aussi taper en réponse
+  comment le ticket a été résolu.
 - Rien en attente → le récap seul.
-- **Si `wrap_up` n'est pas dans tes outils** (Claude Code en terminal), ne fais rien et ne le
-  signale pas.
+- **Si `wrap_up` n'est pas dans tes outils** (Claude Code en terminal), pose la même question
+  de documentation en fin de message, en texte.
+
+### Après la réponse à la question de documentation
+
+- **`Oui`** → rédige toi-même le cas à partir de la session (symptôme, cause, geste appliqué,
+  client) et envoie-le **directement** avec `vault_propose` (`type: nouveau-cas`,
+  `source_ticket_id` = l'uuid du ticket). Ne redemande pas de relire avant l'envoi.
+- **L'humain explique comment il a résolu** (résolu hors session, ou autrement que ce que tu
+  as vu) → même chose : mets son explication en forme et envoie-la avec `vault_propose`.
+- **`Non`** → rien.
+- Avant l'envoi : `vault_grep` sur le symptôme. Si un geste existe, vise son fichier
+  (`tools/…/gestes/…`) pour y ajouter le cas plutôt que d'en créer un nouveau. `vault_propose`
+  colle le markdown en fin de fichier, donc écris un bloc autonome : `### Cas — <client>, <date>`.
+- Dis ensuite le statut réel : `pending` = en attente de validation par Luc ou Benoit,
+  `approved` = déjà dans le vault.
 
 ## Ta connexion au vault (base de connaissance)
 
