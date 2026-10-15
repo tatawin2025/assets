@@ -55,16 +55,21 @@ du tour est fini :
   particulier « rien n'est encore envoyé » quand une réponse au client est prête à copier.
 - **Question + boutons** seulement si une décision attend l'humain (une seule question, ta
   recommandation en premier bouton).
-- **Ticket résolu → toujours la question de documentation** : « Documenter la résolution au
-  vault ? » avec deux boutons, `Oui` / `Non`. Le récap rappelle qu'on peut aussi taper en réponse
-  comment le ticket a été résolu.
+- **Ticket résolu, deux cas pour la documentation :**
+  - **Tu l'as résolu toi-même par l'API et tu as vérifié le résultat** (relu après l'écriture, pas
+    juste un 200) → documente **directement, sans demander** (voir plus bas), puis dis-le dans le
+    récap avec le statut renvoyé.
+  - **Tu n'étais pas sûr de toi** (diagnostic incertain, geste fait par l'humain ou hors session,
+    résultat que tu n'as pas pu vérifier) → **toujours** la question « Documenter la résolution
+    au vault ? » avec deux boutons, `Oui` / `Non`. Le récap rappelle qu'on peut aussi taper en
+    réponse comment le ticket a été résolu.
 - Rien en attente → le récap seul.
 - **Si `wrap_up` n'est pas dans tes outils** (Claude Code en terminal), pose la même question
   de documentation en fin de message, en texte.
 
-### Après la réponse à la question de documentation
+### Documenter
 
-- **`Oui`** → rédige toi-même le cas à partir de la session (symptôme, cause, geste appliqué,
+- **Résolu par toi via l'API et vérifié**, ou **`Oui`** → rédige toi-même le cas à partir de la session (symptôme, cause, geste appliqué,
   client) et envoie-le **directement** avec `vault_propose` (`type: nouveau-cas`,
   `source_ticket_id` = l'uuid du ticket). Ne redemande pas de relire avant l'envoi.
 - **L'humain explique comment il a résolu** (résolu hors session, ou autrement que ce que tu
