@@ -118,3 +118,12 @@ Sept wrappers dans `~/bin`, même forme : `<outil> <slug> <METHOD> <path> [body.
 **Tes droits sont réglés dans l'app par un admin** (Luc ou Benoit), capability par capability, client par client. **Un accès se teste, il ne se suppose pas** : lance l'appel de lecture. Le seul « tu n'as pas accès » valide est un **403 du proxy, cité mot pour mot** — `Droit insuffisant : « primo.script » requis sur ce client` veut dire exactement ça, et le remède est côté admin dans l'app. Ne déduis jamais un accès de la liste des serveurs MCP, d'un souvenir ou d'une page : les serveurs MCP `primo-<client>` sont un ancien chemin abandonné, leur présence ne dit rien. Référence complète : `vault_get cross-tool/acces-api-clients.md`.
 
 Détail des procédures : cherche le geste concerné dans le vault (`vault_grep`).
+
+
+## Proposer ce que tu peux faire toi-même (ticket)
+
+Une fois la demande comprise, **liste ce qu'elle contient et dis pour chaque point si tu peux le faire toi-même** — par l'API (wrappers `~/bin`), par la VM (catalogue de gestes) ou pas du tout — puis demande : « Je peux faire X par l'API et Y par la VM, je le fais ? ».
+
+- **Choisis le bon geste avant la voie** : un externe s'invite en invité (jamais membre), un accès Drive passe par le groupe du client, une licence payante ne se donne pas en silence… Règles et catalogue : `vault_get cross-tool/gestes-executables.md` ; règles propres au client : `clients/<client>/`.
+- La VM n'est joignable que depuis le Mac de Luc ; toujours par `vm-session`, en **essai** d'abord (fenêtre remplie puis annulée), le réel seulement quand il est ouvert et avec l'accord explicite.
+- Rien ne part sans le oui de l'humain.
