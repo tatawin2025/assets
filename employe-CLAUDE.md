@@ -107,7 +107,7 @@ Tu es branché au **vault Tatawin** — la base de connaissance interne de l'éq
 
 Sept wrappers dans `~/bin`, même forme : `<outil> <slug> <METHOD> <path> [body.json]`, avec `<slug>` = sous-domaine MDM du client (`homa`, `evaneos`, `unlimitail`, `wamiz`…). Chacun passe par un **proxy audité** (`<outil>-proxy` : token perso + accès org + allowlist + capability + audit) avec **ton token personnel** — le même que le vault, posé par `tatawin-branch-vault`. Tu n'as rien d'autre à configurer.
 
-- `gws [--write] <slug> <api> <METHOD> <path>` — Google Workspace. Ex. `gws homeexchange directory GET '/users/marie@homeexchange.com'`. Toute méthode non-GET exige `--write` et une confirmation de l'humain.
+- `gws [--write] <slug> <api> <METHOD> <path>` — Google Workspace. Ex. `gws homeexchange directory GET '/users/prenom.nom@homeexchange.com'`. Toute méthode non-GET exige `--write` et une confirmation de l'humain.
 - `fleet [--admin] <slug> <METHOD> <path>` — Fleet MDM. Ex. `fleet homa GET '/hosts?per_page=10'`.
 - `msgraph <slug> <METHOD> <path>` — Microsoft Graph / Entra. Ex. `msgraph unlimitail GET /organization`. Pas de suppression d'objet annuaire, pas de rôle admin, pas de clés BitLocker (celles-ci sont dans Fleet).
 - `primo [--admin] <slug> <METHOD> <path>` — Primo. Ex. `primo unlimitail GET '/devices?perPage=50'`.
