@@ -15,8 +15,11 @@
 #   - Wallpaper Tatawin
 #   - Dock : Dia, Slack, 1Password, Claude, Tatawin, Primo
 #   - Fuseau horaire automatique
-#   - Node + bundle vault-mcp, puis (au 1er login) branchement de Claude au vault
-#     via le token tat_live_ de l'employé (récupéré depuis 1Password).
+#   - (au 1er login) Claude Code, wrappers ~/bin et la commande `tatawin-branch-vault`,
+#     qui pose le token tat_live_ de l'employé pour les wrappers (depuis 1Password).
+#   - Le VAULT n'est plus installé sur le poste (16/11/2026) : c'est le connecteur
+#     « Vault Tatawin » de l'organisation Claude Team, que l'employé branche avec Google.
+#     Plus de Node, de bundle vault-mcp ni de sync vault-mcp ici.
 #
 # WiFi « Les Complices » = profil .mobileconfig séparé (Custom settings),
 #   PAS dans ce script (cf. tools/fleet-mdm/profiles/tw-wifi-lescomplices.mobileconfig).
@@ -41,14 +44,10 @@ DESKTOPPR_URL="https://github.com/scriptingosx/desktoppr/releases/download/v0.5/
 DESKTOPPR_PATH="/usr/local/bin/desktoppr"
 DOCKUTIL_URL="https://github.com/kcrawford/dockutil/releases/download/3.0.2/dockutil-3.0.2.pkg"
 DOCKUTIL_PATH="/usr/local/bin/dockutil"
-NODE_PKG_URL="https://nodejs.org/dist/v20.17.0/node-v20.17.0.pkg"
 # 1Password CLI (op) = REQUIS : la commande interactive `tatawin-branch-vault` (lancée UNE fois
-# par l'employé) récupère le token vault via `op item get` au premier plan (jamais via Fleet, jamais
-# en agent — cf. boucle TCC résolue 19/08). Sans op, le vault ne se branche jamais. Pkg officiel.
+# par l'employé) récupère son token personnel via `op item get` au premier plan (jamais via Fleet,
+# jamais en agent — cf. boucle TCC résolue 19/08). Sans op, les wrappers ~/bin n'ont pas de token.
 OP_PKG_URL="https://cache.agilebits.com/dist/1P/op2/pkg/v2.34.0/op_apple_universal_v2.34.0.pkg"
-# Bundle vault-mcp = release "vault-mcp" sur tatawin2025/assets (server.js + bootstrap, sans secret).
-VAULT_MCP_DIST_URL="https://github.com/tatawin2025/assets/releases/download/vault-mcp/vault-mcp.tar.gz"
-VAULT_MCP_DIR="/Library/Application Support/Tatawin/vault-mcp"
 # Favoris Dia = tarball {dia-deploy-bookmarks.py + bookmarks/*.json} sur tatawin2025/assets (sans secret).
 DIA_BM_DIST_URL="https://github.com/tatawin2025/assets/releases/download/dia-bookmarks/dia-bookmarks.tar.gz"
 DIA_DIR="/Library/Application Support/Tatawin/dia"
@@ -227,82 +226,52 @@ chmod 644 /Library/LaunchAgents/com.tatawin.dock.plist
 chown root:wheel /Library/LaunchAgents/com.tatawin.dock.plist
 echo "$(date) - Dock configuré"
 
-# === NODE + BUNDLE vault-mcp (sans secret) =================================
-if ! command -v node &>/dev/null; then
-    curl -L -o /tmp/node.pkg "$NODE_PKG_URL" && installer -pkg /tmp/node.pkg -target / && rm -f /tmp/node.pkg
-fi
-# Le pkg Node installe node+npm dans /usr/local/bin — pas forcément dans le PATH
-# de la setup experience (root, PATH minimal). On l'ajoute pour que `npm install` marche.
 export PATH="/usr/local/bin:$PATH"
-mkdir -p "$VAULT_MCP_DIR"
-if curl -fL -o /tmp/vault-mcp.tar.gz "$VAULT_MCP_DIST_URL" && [[ -s /tmp/vault-mcp.tar.gz ]]; then
-    tar -xzf /tmp/vault-mcp.tar.gz -C "$VAULT_MCP_DIR" --strip-components=1
-    ( cd "$VAULT_MCP_DIR" && npm install --omit=dev --no-audit --no-fund ) || echo "WARN npm install"
-    chmod -R 755 "$VAULT_MCP_DIR"
-    echo "$(date) - Bundle vault-mcp déposé"
-else
-    echo "$(date) - WARN : bundle vault-mcp indisponible (à publier), Claude non branché"
-fi
-rm -f /tmp/vault-mcp.tar.gz
 
-# Sync du bundle : sans ça, le bundle n'est posé qu'ici, au provisioning, et un outil MCP
-# ajouté plus tard n'atteint jamais un poste déjà en service. Le LaunchDaemon compare toutes
-# les heures et ne remplace qu'en cas d'écart (garde-fous : rien n'est touché si la release
-# est injoignable, illisible, ou si le server.js reçu ne parse pas).
-curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-vault-mcp-sync.sh" | bash >/dev/null 2>&1 \
-    && echo "$(date) - Sync du bundle vault-mcp installée" || echo "$(date) WARN install sync vault-mcp"
-# Même traitement pour les wrappers ~/bin (gws/fleet/msgraph/primo/slack/notion/abm) : sans ça,
-# un wrapper ajouté ou corrigé après le provisioning n'atteint jamais un poste en service.
+# Plus de vault local (16/11/2026) : ni Node, ni bundle vault-mcp, ni sync vault-mcp. Le vault
+# est le connecteur « Vault Tatawin » de l'organisation Claude Team (https://app.tatawin.io/mcp).
+# Sync des wrappers ~/bin (gws/fleet/msgraph/primo/slack/notion/abm) : sans ça, un wrapper
+# ajouté ou corrigé après le provisioning n'atteint jamais un poste en service.
 curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli-sync.sh" | bash >/dev/null 2>&1 \
     && echo "$(date) - Sync des wrappers tatawin-cli installée" || echo "$(date) WARN install sync tatawin-cli"
 
-# === 1Password CLI (op) — requis par l'agent Claude pour lire le token vault ===
+# === 1Password CLI (op) — requis par tatawin-branch-vault pour lire le token =====
 if ! command -v op &>/dev/null && [[ ! -x /usr/local/bin/op ]]; then
     curl -fL -o /tmp/op.pkg "$OP_PKG_URL" && installer -pkg /tmp/op.pkg -target / && echo "$(date) - op (1Password CLI) installé"
     rm -f /tmp/op.pkg
 fi
 
-# === CLAUDE au vault (au 1er login, APRÈS login 1Password) =================
+# === OUTILLAGE CLAUDE + WRAPPERS (au 1er login) =============================
 cat > /Library/Scripts/tatawin-claude-setup.sh << 'USERSCRIPT'
 #!/bin/bash
-# PATH minimal en LaunchAgent → on ajoute les emplacements de op/node/claude.
+# PATH minimal en LaunchAgent → on ajoute les emplacements de op/claude.
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin"
 exec >> "$HOME/Library/Logs/tatawin-claude-setup.log" 2>&1
-# Cet agent installe l'OUTILLAGE (Claude Code + wrappers + commande de branchement).
-# Il NE fait PLUS le branchement du vault : op en LaunchAgent ne peut pas obtenir le
-# token de façon fiable (autorisations TCC macOS + accès CLI 1Password ne collent pas
-# en non-interactif → prompt en boucle). Le branchement = commande interactive
+# Cet agent installe l'OUTILLAGE (Claude Code + wrappers + commande tatawin-branch-vault).
+# Il ne lit aucun token : op en LaunchAgent ne peut pas l'obtenir de façon fiable (TCC +
+# accès CLI 1Password en boucle). Le token des wrappers = commande interactive
 # `tatawin-branch-vault` lancée par l'employé (Welcome guide, étape Claude).
+# Le vault, lui, est le connecteur Claude Team : rien à installer ici (16/11/2026).
 MARKER="$HOME/.tatawin-tooling-installed"
 [[ -f "$MARKER" ]] && exit 0
-VAULT_MCP_DIR="/Library/Application Support/Tatawin/vault-mcp"
-[[ -f "$VAULT_MCP_DIR/server.js" ]] || { echo "$(date) bundle absent, on retentera"; exit 0; }
-
-# Node (posé par le setup) fait tourner le serveur MCP vault (utilisé par la commande
-# de branchement interactive `tatawin-branch-vault`, posée plus bas).
-NODE_BIN="$(command -v node || echo /usr/local/bin/node)"
-[[ -x "$NODE_BIN" ]] || { echo "$(date) node absent, on retentera"; exit 0; }
 
 # Claude Code (CLI) — installé sur TOUS les postes (choix 2026-08-18). Installeur
-# natif officiel → ~/.local/bin/claude. Idempotent (skip si déjà présent). L'agent
-# le branchera au vault plus bas (TARGETS inclut ~/.claude.json si claude présent).
+# natif officiel → ~/.local/bin/claude. Idempotent (skip si déjà présent).
 if ! command -v claude &>/dev/null && [[ ! -x "$HOME/.local/bin/claude" ]]; then
     curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1 && echo "$(date) - Claude Code installé" || echo "$(date) WARN install Claude Code"
 fi
 
-# Wrappers Tatawin (gws/fleet/notion/primo/slack + op-cached) → ~/bin, via l'installeur
-# publié (pose aussi jq + PATH). Aucun secret dans les scripts : ils lisent leur token
-# dans 1Password « Tatawin / Interne » à l'exécution → INERTES tant que la personne n'y
-# a pas accès. C'est l'appartenance à ce coffre 1Password (que gère l'IT), pas la présence
-# des scripts, qui ouvre l'accès aux API clients.
+# Wrappers Tatawin (gws/fleet/msgraph/primo/slack/notion/abm…) → ~/bin, via l'installeur
+# publié (pose aussi jq + PATH). Aucun secret dans les scripts : ils lisent le token
+# PERSONNEL de l'employé (~/.config/tatawin/token, posé par tatawin-branch-vault) → INERTES
+# tant qu'il n'est pas posé. Les droits réels se règlent dans Tatacontrol (capabilities).
 if [[ ! -x "$HOME/bin/gws" || ! -x "$HOME/bin/fleet" ]]; then
     curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/install-tatawin-cli.sh" | bash >/dev/null 2>&1 && echo "$(date) - wrappers Tatawin posés" || echo "$(date) WARN install wrappers"
 fi
 
-# Commande de branchement du vault (INTERACTIVE) → ~/bin. Le branchement N'EST PLUS
-# fait par cet agent (op en arrière-plan = prompt TCC/1Password en boucle). L'employé
-# lance `tatawin-branch-vault` UNE fois en Terminal (Welcome guide, étape Claude) : op
-# tourne au premier plan, il approuve la/les demande(s) une fois, le vault est branché.
+# Commande `tatawin-branch-vault` (INTERACTIVE) → ~/bin. L'employé la lance UNE fois en
+# Terminal (Welcome guide, étape Claude) : op tourne au premier plan, il approuve une fois,
+# le token des wrappers est posé dans ~/.config/tatawin/token. (Elle ne touche plus Claude.)
 mkdir -p "$HOME/bin"
 curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/tatawin-branch-vault.sh" -o "$HOME/bin/tatawin-branch-vault" 2>/dev/null \
   && chmod +x "$HOME/bin/tatawin-branch-vault" && echo "$(date) - commande tatawin-branch-vault posée"
@@ -311,7 +280,7 @@ curl -fsSL "https://raw.githubusercontent.com/tatawin2025/assets/main/tatawin-br
 # → l'agent s'arrête (plus aucun appel op, donc plus de prompt en boucle).
 if { command -v claude &>/dev/null || [[ -x "$HOME/.local/bin/claude" ]]; } && [[ -x "$HOME/bin/gws" && -x "$HOME/bin/tatawin-branch-vault" ]]; then
     touch "$MARKER"
-    echo "$(date) - outillage prêt — branchement vault = commande interactive tatawin-branch-vault"
+    echo "$(date) - outillage prêt — token des wrappers = commande interactive tatawin-branch-vault ; vault = connecteur Claude Team"
 fi
 USERSCRIPT
 chmod 755 /Library/Scripts/tatawin-claude-setup.sh
